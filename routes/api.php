@@ -20,16 +20,23 @@ use Illuminate\Support\Facades\Route;
 //    return $request->user();
 //});
 
-Route::middleware('auth:api')->post('/user', function (Request $request) {
-    return $request->user();
+
+Route::middleware('auth:api')->group(function () {
+
+    Route::post('/user', function (Request $request) {
+        return $request->user();
+    });
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+
+    Route::get('todos', [ToDoController::class, 'index']);
+    Route::post('todos/store', [ToDoController::class, 'store']);
+    Route::patch('todos/{id}', [ToDoController::class, 'update']);
+    Route::delete('todos/{id}', [ToDoController::class, 'destroy']);
 });
 
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/register', [AuthController::class, 'register'])->name('register');
-Route::middleware('auth:api')->post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 
-Route::get('todos', [ToDoController::class, 'index']);
-Route::post('todos/store', [ToDoController::class, 'store']);
-Route::patch('todos/{id}', [ToDoController::class, 'update']);
-Route::delete('todos/{id}', [ToDoController::class, 'destroy']);
+

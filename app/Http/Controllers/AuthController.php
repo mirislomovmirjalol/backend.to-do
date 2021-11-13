@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\GuzzleException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,35 +19,22 @@ class AuthController extends Controller
     {
         $http = new Client;
 
-        try {
-            $response = Http::asForm()->post(env('PASSPORT_LOGIN_ENDPOINT'), [
-                'grant_type' => 'password',
-                'client_id' => env('PASSPORT_CLIENT_ID'),
-                'client_secret' => env('PASSPORT_CLIENT_SECRET'),
-                'username' => $request->username,
-                'password' => $request->password,
-            ]);
+        $response = Http::asForm()->post(env('PASSPORT_LOGIN_ENDPOINT'), [
+            'grant_type' => 'password',
+            'client_id' => env('PASSPORT_CLIENT_ID'),
+            'client_secret' => env('PASSPORT_CLIENT_SECRET'),
+            'username' => $request->username,
+            'password' => $request->password,
+        ]);
 
-
-            return $response->getBody();
-        } catch (BadResponseException $e) {
-            if ($e->getCode() == 400) {
-                return Response()->json('Invalid Request. Please enter a username or a password.', $e->getCode());
-            } else if ($e->getCode() == 401) {
-                return Response()->json('Your credentials are incorrect. Please try again', $e->getCode());
-            } else if ($e->getCode() == 404) {
-                return Response()->json('Not found', $e->getCode());
-            }
-
-            return Response()->json('Something wrong on the server', $e->getCode());
-        }
+        return $response->getBody();
     }
 
     public function register(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|max:255|unique:users',
+            'email' => 'required|email|string|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
         ]);
 

@@ -15,7 +15,14 @@ class ToDoController extends Controller
      */
     public function index()
     {
-        return ToDo::all();
+        $todos = ToDo::query()->where('user_id', Auth::user()->id)->latest()->get();
+        foreach ($todos as $todo) {
+            $todo->data = $todo->created_at->format('d/m/Y');
+        }
+        if (ToDo::query()->first()) {
+            return $todos;
+        }
+        return [];
     }
 
     /**
@@ -39,12 +46,11 @@ class ToDoController extends Controller
         $request->validate([
             'title' => 'required|string',
             'done' => 'nullable',
-            'user_id' => 'nullable',
         ]);
 
         $todo = new ToDo;
         $todo->title = $request->title;
-        $todo->user_id = 1;
+        $todo->user_id = Auth::user()->id;
         $todo->save();
         return response($todo, 200);
     }
@@ -74,7 +80,7 @@ class ToDoController extends Controller
      * Update the specified resource in storage.
      *
      * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|\Illuminate\Http\Response|\never
      */
     public function update(Request $request, $id)
     {
@@ -84,10 +90,15 @@ class ToDoController extends Controller
             'user_id' => 'nullable',
         ]);
 
+
         $todo = ToDo::query()->where('id', $id)->first();
 
         if (!$todo) {
             return abort(404);
+        }
+
+        if ($todo->user_id != Auth::user()->id) {
+            return response()->json('You don\'t have permission!');
         }
 
         $todo->update($data);
@@ -98,13 +109,18 @@ class ToDoController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\Response|\never
+     * @return \Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\Routing\ResponseFactory|\Illuminate\Http\JsonResponse|\Illuminate\Http\Response|\never
      */
     public function destroy($id)
     {
         $todo = ToDo::query()->where('id', $id)->first();
+
         if (!$todo) {
             return abort(404);
+        }
+
+        if ($todo->user_id != Auth::user()->id) {
+            return response()->json('You don\'t have permission!');
         }
 
         if ($todo->delete()) {
